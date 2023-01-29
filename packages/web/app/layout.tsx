@@ -1,10 +1,8 @@
-import './globals.css'
+import './globals.css';
+import { AppWrapper } from './includes/AppWrapper';
+import { Navbar } from './includes/Navbar';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       {/*
@@ -12,7 +10,13 @@ export default function RootLayout({
         head.tsx. Find out more at https://beta.nextjs.org/docs/api-reference/file-conventions/head
       */}
       <head />
-      <body>{children}</body>
+
+      <body>
+        <AppWrapper>
+          <Navbar></Navbar>
+          {children}
+        </AppWrapper>
+      </body>
     </html>
-  )
+  );
 }
