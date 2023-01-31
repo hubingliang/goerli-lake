@@ -1,11 +1,30 @@
 'use client';
 import { useWeb3Modal } from '@web3modal/react';
 import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 import { create } from 'ipfs-http-client';
+import { ethers } from 'ethers';
 import { useContract, useSigner } from 'wagmi';
-// import NFTMarketplace from '../artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
+import { getProvider } from '@wagmi/core';
+import NFTMarketplace from '../../../contract/artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
+import { ChangeEvent } from 'react';
+const infuraIpfsprojectId = '2L1l7ttwAeOLGnqZ4ipl2E5Depc';
+const infuraIpfsProjectSecret = '276479298f6716853f779dcf04a23ccd';
+const auth = `Basic ${Buffer.from(infuraIpfsprojectId + ':' + infuraIpfsProjectSecret).toString(
+  'base64'
+)}`;
+// const client = create({ url: 'https://ipfs.infura.io:5001/api/v0' });
+const infuraSubdomainGateway = 'https://open-lake.infura-ipfs.io';
+const client = create({
+  host: 'ipfs.infura.io',
+  port: 5001,
+  protocol: 'https',
+  headers: {
+    authorization: auth,
+  },
+});
 
-const client = create({ url: 'https://ipfs.infura.io:5001/api/v0' });
+import { marketplaceAddress } from '../../config';
 
 type FormData = {
   name: string;
@@ -17,15 +36,24 @@ type FormData = {
 export default function Mint() {
   const { isOpen, open, close } = useWeb3Modal();
   const { data: signer, isError, isLoading } = useSigner();
-
+  const router = useRouter();
+  const contract = useContract({
+    address: marketplaceAddress,
+    abi: NFTMarketplace.abi,
+    signerOrProvider: signer,
+  });
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     getValues,
     formState: { errors },
   } = useForm<FormData>();
-  const onSubmit = (data: FormData) => console.log(data);
+  const onSubmit = (data: FormData) => {
+    console.log(data);
+    mint();
+  };
   async function uploadToIPFS() {
     const { name, description, price, imageFile } = getValues();
     /* first, upload metadata to IPFS */
@@ -36,7 +64,7 @@ export default function Mint() {
     });
     try {
       const added = await client.add(data);
-      const url = `https://ipfs.infura.io/ipfs/${added.path}`;
+      const url = `${infuraSubdomainGateway}/ipfs/${added.path}`;
       /* after metadata is uploaded to IPFS, return the URL to use it in the transaction */
       console.log('url: ', url);
       return url;
@@ -45,13 +73,36 @@ export default function Mint() {
     }
   }
   const mint = async () => {
-    const url = await uploadToIPFS();
-    const contract = useContract({
-      address: '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e',
-      // abi: ensRegistryABI,
-      signerOrProvider: signer,
-    });
+    if (contract) {
+      const url = await uploadToIPFS();
+
+      const { price } = getValues();
+      const transferPrice = ethers.utils.parseUnits(`${price}`, 'ether');
+      let listingPrice = await contract.getListingPrice();
+      const transaction = await contract.createToken(url, transferPrice, { value: listingPrice });
+      await transaction.wait();
+      router.push('/');
+      console.log('listingPrice: ', listingPrice);
+    }
   };
+  const { onChange } = register('imageFile', { required: true });
+  async function onFileChange(e: ChangeEvent<HTMLInputElement>) {
+    /* upload image to IPFS */
+    console.log('e.target.files: ', e.target.files);
+    if (e.target.files) {
+      try {
+        const file = e.target.files[0];
+        const added = await client.add(file, {
+          progress: (prog) => console.log(`received: ${prog}`),
+        });
+        const url = `${infuraSubdomainGateway}/ipfs/${added.path}`;
+        setValue('imageFile', url, { shouldValidate: true });
+        console.log('url: ', url);
+      } catch (error) {
+        console.log('Error uploading file: ', error);
+      }
+    }
+  }
   return (
     <div
       className="container min-h-screen flex justify-center items-center min-w-full bg-slate-50"
@@ -126,7 +177,11 @@ export default function Mint() {
             className={`file-input input-bordered w-full max-w-xs ${
               errors.imageFile && 'input-error'
             }`}
-            {...register('imageFile', { required: true })}
+            // {...register('imageFile', { required: true })}
+            onChange={(e) => {
+              onFileChange(e);
+              // onChange(e);
+            }}
           />
           <label className="label">
             <span className="label-text-alt"></span>

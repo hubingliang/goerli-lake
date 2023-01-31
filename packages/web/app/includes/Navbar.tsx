@@ -6,11 +6,14 @@ export const Navbar = () => {
     <div className="navbar bg-base-100 fixed top-0 z-10">
       <div className="flex-1">
         <Link href="/" className="btn btn-ghost normal-case text-xl">
-          NFT MarketPlace
+          Goerli Gallery
         </Link>
       </div>
       <div className="flex-none">
         <ul className="menu menu-horizontal px-1">
+          <li>
+            <Link href="/explore">Explore</Link>
+          </li>
           <li>
             <Link href="/mint">Mint NFT</Link>
           </li>
