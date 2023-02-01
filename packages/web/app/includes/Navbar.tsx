@@ -6,7 +6,7 @@ export const Navbar = () => {
     <div className="navbar bg-base-100 fixed top-0 z-10">
       <div className="flex-1">
         <Link href="/" className="btn btn-ghost normal-case text-xl">
-          Goerli Gallery
+          Goerli Lake
         </Link>
       </div>
       <div className="flex-none">

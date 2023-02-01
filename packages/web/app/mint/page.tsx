@@ -6,7 +6,7 @@ import { create } from 'ipfs-http-client';
 import { ethers } from 'ethers';
 import { useContract, useSigner } from 'wagmi';
 import { useState } from 'react';
-import NFTMarketplace from '../../../contract/artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
+import NFTMarketplace from '@/abi//NFTMarketplace.json';
 import { ChangeEvent } from 'react';
 const infuraIpfsprojectId = '2L1l7ttwAeOLGnqZ4ipl2E5Depc';
 const infuraIpfsProjectSecret = '276479298f6716853f779dcf04a23ccd';
@@ -74,14 +74,14 @@ export default function Mint() {
   }
   const mint = async () => {
     if (contract) {
-      setLoading(true)
+      setLoading(true);
       const url = await uploadToIPFS();
       const { price } = getValues();
       const transferPrice = ethers.utils.parseUnits(`${price}`, 'ether');
       let listingPrice = await contract.getListingPrice();
       const transaction = await contract.createToken(url, transferPrice, { value: listingPrice });
       await transaction.wait();
-      setLoading(false)
+      setLoading(false);
       router.push('/explore');
       console.log('listingPrice: ', listingPrice);
     }

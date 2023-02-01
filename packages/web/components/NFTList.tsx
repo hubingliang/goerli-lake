@@ -3,7 +3,7 @@ import { useContract, useSigner } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { marketplaceAddress } from '@/config';
-import NFTMarketplace from '../../contract/artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
+import NFTMarketplace from '@/abi//NFTMarketplace.json';
 import { ethers } from 'ethers';
 import axios from 'axios';
 import _ from 'lodash';
