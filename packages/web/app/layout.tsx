@@ -11,7 +11,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       */}
       <head />
 
-      <body>
+      <body className='min-h-screen'>
         <AppWrapper>
           <Navbar></Navbar>
           {children}

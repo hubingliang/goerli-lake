@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { create } from 'ipfs-http-client';
 import { ethers } from 'ethers';
 import { useContract, useSigner } from 'wagmi';
-import { getProvider } from '@wagmi/core';
+import { useState } from 'react';
 import NFTMarketplace from '../../../contract/artifacts/contracts/NFTMarketplace.sol/NFTMarketplace.json';
 import { ChangeEvent } from 'react';
 const infuraIpfsprojectId = '2L1l7ttwAeOLGnqZ4ipl2E5Depc';
@@ -34,8 +34,8 @@ type FormData = {
 };
 
 export default function Mint() {
-  const { isOpen, open, close } = useWeb3Modal();
   const { data: signer, isError, isLoading } = useSigner();
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const contract = useContract({
     address: marketplaceAddress,
@@ -74,14 +74,15 @@ export default function Mint() {
   }
   const mint = async () => {
     if (contract) {
+      setLoading(true)
       const url = await uploadToIPFS();
-
       const { price } = getValues();
       const transferPrice = ethers.utils.parseUnits(`${price}`, 'ether');
       let listingPrice = await contract.getListingPrice();
       const transaction = await contract.createToken(url, transferPrice, { value: listingPrice });
       await transaction.wait();
-      router.push('/');
+      setLoading(false)
+      router.push('/explore');
       console.log('listingPrice: ', listingPrice);
     }
   };
@@ -105,7 +106,7 @@ export default function Mint() {
   }
   return (
     <div
-      className="container min-h-screen flex justify-center items-center min-w-full bg-slate-50"
+      className="container min-h-screen flex justify-center items-center min-w-ful"
       style={{ paddingTop: 66 }}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
@@ -155,6 +156,7 @@ export default function Mint() {
           <input
             type="number"
             placeholder="NFT price"
+            step="0.0001"
             className={`input input-bordered w-full max-w-xs ${errors.price && 'input-error'}`}
             {...register('price', { required: true })}
           />
@@ -170,7 +172,7 @@ export default function Mint() {
 
         <div className="form-control w-full max-w-xs">
           <label className="label">
-            <span className="label-text">NFT price</span>
+            <span className="label-text">NFT image</span>
           </label>
           <input
             type="file"
@@ -193,10 +195,7 @@ export default function Mint() {
           </label>
         </div>
 
-        <input type="submit" className="btn" />
-        {/* <button className="btn" onClick={mint}>
-          Button
-        </button> */}
+        <input type="submit" className={`btn ${loading && 'loading'}`} />
       </form>
     </div>
   );
