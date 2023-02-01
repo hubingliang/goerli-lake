@@ -61,12 +61,12 @@ export const NFTList = ({ type }: { type?: NftTypes }) => {
     }
   };
   function listNFT(nft: Nft) {
-    router.push(`/resell-nft?id=${nft.tokenId}&tokenUri=${nft.tokenUri}`);
+    router.push(`/resell/${nft.tokenUri}`);
   }
   useEffect(() => {
     setLoading(true);
     signer && loadNFTList();
-  }, [signer, type]);
+  }, [signer, type, loadNFTList]);
   const buyNft = async (nft: Nft) => {
     if (contract) {
       const price = ethers.utils.parseUnits(nft.price.toString(), 'ether');
@@ -96,7 +96,7 @@ export const NFTList = ({ type }: { type?: NftTypes }) => {
       {loading
         ? new Array(10).fill(111).map((item, index) => {
             return (
-              <div className="animate-pulse flex space-x-4">
+              <div className="animate-pulse flex space-x-4" key={index}>
                 <div className="card card-compact bg-base-100 shadow-xl mb-8 flex-1">
                   <figure>
                     <div className="bg-slate-200 h-64 w-full"></div>

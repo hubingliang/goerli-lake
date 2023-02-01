@@ -1,5 +1,4 @@
 'use client';
-import { useWeb3Modal } from '@web3modal/react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { create } from 'ipfs-http-client';
@@ -8,23 +7,8 @@ import { useContract, useSigner } from 'wagmi';
 import { useState } from 'react';
 import NFTMarketplace from '@/abi//NFTMarketplace.json';
 import { ChangeEvent } from 'react';
-const infuraIpfsprojectId = '2L1l7ttwAeOLGnqZ4ipl2E5Depc';
-const infuraIpfsProjectSecret = '276479298f6716853f779dcf04a23ccd';
-const auth = `Basic ${Buffer.from(infuraIpfsprojectId + ':' + infuraIpfsProjectSecret).toString(
-  'base64'
-)}`;
-// const client = create({ url: 'https://ipfs.infura.io:5001/api/v0' });
-const infuraSubdomainGateway = 'https://open-lake.infura-ipfs.io';
-const client = create({
-  host: 'ipfs.infura.io',
-  port: 5001,
-  protocol: 'https',
-  headers: {
-    authorization: auth,
-  },
-});
-
-import { marketplaceAddress } from '../../config';
+// import { marketplaceAddress } from '@/config';
+const marketplaceAddress = '0x6B7D840d17C40921cf6F2f8c531E8d13740492E5';
 
 type FormData = {
   name: string;
@@ -50,6 +34,22 @@ export default function Mint() {
     getValues,
     formState: { errors },
   } = useForm<FormData>();
+  const infuraIpfsprojectId = '2L1l7ttwAeOLGnqZ4ipl2E5Depc';
+  const infuraIpfsProjectSecret = '276479298f6716853f779dcf04a23ccd';
+  const auth = `Basic ${Buffer.from(infuraIpfsprojectId + ':' + infuraIpfsProjectSecret).toString(
+    'base64'
+  )}`;
+  // const client = create({ url: 'https://ipfs.infura.io:5001/api/v0' });
+  const infuraSubdomainGateway = 'https://open-lake.infura-ipfs.io';
+  const client = create({
+    host: 'ipfs.infura.io',
+    port: 5001,
+    protocol: 'https',
+    headers: {
+      authorization: auth,
+    },
+  });
+
   const onSubmit = (data: FormData) => {
     console.log(data);
     mint();
