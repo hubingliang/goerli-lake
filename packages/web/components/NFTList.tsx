@@ -1,11 +1,12 @@
 'use client';
 import { useContract, useSigner } from 'wagmi';
+import queryString from 'query-string';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { marketplaceAddress } from '@/config';
 import NFTMarketplace from '@/abi//NFTMarketplace.json';
 import { ethers } from 'ethers';
-import axios from 'axios';
+import axios from '@/lib/axios';
 import _ from 'lodash';
 import { Nft, NftTypes } from '@/interface';
 
@@ -18,9 +19,18 @@ export const NFTList = ({ type }: { type?: NftTypes }) => {
     signerOrProvider: signer,
   });
   const [nftList, setNftList] = useState<Nft[]>([]);
+  const [pinnedFiles, setPinnedFiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchAllPinnedFile = async () => {
+    const {
+      data: { rows: nftList },
+    } = await axios.get(
+      `https://api.pinata.cloud/data/pinList?${queryString.stringify({ status: 'pinned' })}`
+    );
+    setPinnedFiles(nftList);
+  };
   const loadNFTList = async () => {
-    if (contract) {
+    if (contract && pinnedFiles.length) {
       let data = [];
       switch (type) {
         case NftTypes.ALL:
@@ -35,38 +45,38 @@ export const NFTList = ({ type }: { type?: NftTypes }) => {
         default:
           break;
       }
-      const items = await Promise.all(
-        data.map(async (i: any) => {
-          const tokenUri = await contract.tokenURI(i.tokenId);
-          const tokenId = _.last(tokenUri.split('/'));
-          const meta = await axios.get(`https://open-lake.infura-ipfs.io/ipfs/${tokenId}`);
-          console.log('meta: ', meta);
+      const cidList = await Promise.all(
+        await data.map(async (i: any) => {
+          const cid: string = await contract.tokenURI(i.tokenId);
           const price = ethers.utils.formatUnits(i.price.toString(), 'ether');
-          console.log('price: ', price);
-          const item = {
+          const { metadata } = _.find(pinnedFiles, ['ipfs_pin_hash', cid]);
+          console.log('i.tokenId.toNumber(): ', i.tokenId.toNumber());
+          return {
             price,
             tokenId: i.tokenId.toNumber(),
             seller: i.seller,
             owner: i.owner,
-            image: meta.data.image,
-            name: meta.data.name,
-            description: meta.data.description,
-            tokenUri,
+            image: `https://gateway.pinata.cloud/ipfs/${cid}`,
+            name: metadata.name,
+            description: metadata.description,
+            tokenUri: cid,
           };
-          return item;
         })
       );
-      setNftList(items);
+      setNftList(cidList);
       setLoading(false);
     }
   };
   function listNFT(nft: Nft) {
-    router.push(`/resell/${nft.tokenUri}`);
+    router.push(`/resell/${nft.tokenUri}?tokenId=${nft.tokenId}`);
   }
   useEffect(() => {
     setLoading(true);
     signer && loadNFTList();
-  }, [signer, type, loadNFTList]);
+  }, [signer, type, pinnedFiles]);
+  useEffect(() => {
+    fetchAllPinnedFile();
+  }, []);
   const buyNft = async (nft: Nft) => {
     if (contract) {
       const price = ethers.utils.parseUnits(nft.price.toString(), 'ether');

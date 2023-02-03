@@ -17,7 +17,7 @@ export const Navbar = () => {
           <li>
             <Link href="/mint">Mint NFT</Link>
           </li>
-          <li tabIndex={0}>
+          {/* <li tabIndex={0}>
             <a>
               Parent
               <svg
@@ -41,7 +41,7 @@ export const Navbar = () => {
           </li>
           <li>
             <a>Item 3</a>
-          </li>
+          </li> */}
         </ul>
       </div>
       <User></User>

@@ -1,16 +1,16 @@
 'use client';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
-import { create } from 'ipfs-http-client';
 import { ethers } from 'ethers';
 import { useContract, useSigner } from 'wagmi';
 import { useState } from 'react';
 import NFTMarketplace from '@/abi//NFTMarketplace.json';
 import { ChangeEvent } from 'react';
-// import { marketplaceAddress } from '@/config';
-const marketplaceAddress = '0x6B7D840d17C40921cf6F2f8c531E8d13740492E5';
+import FormData from 'form-data';
+import axios from '@/lib/axios';
+import { marketplaceAddress } from '@/config';
 
-type FormData = {
+type FormDataType = {
   name: string;
   description: string;
   price: number;
@@ -33,80 +33,61 @@ export default function Mint() {
     setValue,
     getValues,
     formState: { errors },
-  } = useForm<FormData>();
-  const infuraIpfsprojectId = '2L1l7ttwAeOLGnqZ4ipl2E5Depc';
-  const infuraIpfsProjectSecret = '276479298f6716853f779dcf04a23ccd';
-  const auth = `Basic ${Buffer.from(infuraIpfsprojectId + ':' + infuraIpfsProjectSecret).toString(
-    'base64'
-  )}`;
-  // const client = create({ url: 'https://ipfs.infura.io:5001/api/v0' });
-  const infuraSubdomainGateway = 'https://open-lake.infura-ipfs.io';
-  const client = create({
-    host: 'ipfs.infura.io',
-    port: 5001,
-    protocol: 'https',
-    headers: {
-      authorization: auth,
-    },
-  });
+  } = useForm<FormDataType>();
 
-  const onSubmit = (data: FormData) => {
-    console.log(data);
-    mint();
+  const onSubmit = (data: FormDataType) => {
+    mint(data);
   };
-  async function uploadToIPFS() {
-    const { name, description, price, imageFile } = getValues();
-    /* first, upload metadata to IPFS */
-    const data = JSON.stringify({
-      name,
-      description,
-      image: imageFile,
-    });
-    try {
-      const added = await client.add(data);
-      const url = `${infuraSubdomainGateway}/ipfs/${added.path}`;
-      /* after metadata is uploaded to IPFS, return the URL to use it in the transaction */
-      console.log('url: ', url);
-      return url;
-    } catch (error) {
-      console.log('Error uploading file: ', error);
-    }
-  }
-  const mint = async () => {
+
+  const mint = async (data: FormDataType) => {
     if (contract) {
-      setLoading(true);
-      const url = await uploadToIPFS();
-      const { price } = getValues();
-      const transferPrice = ethers.utils.parseUnits(`${price}`, 'ether');
-      let listingPrice = await contract.getListingPrice();
-      const transaction = await contract.createToken(url, transferPrice, { value: listingPrice });
-      await transaction.wait();
-      setLoading(false);
-      router.push('/explore');
-      console.log('listingPrice: ', listingPrice);
-    }
-  };
-  const { onChange } = register('imageFile', { required: true });
-  async function onFileChange(e: ChangeEvent<HTMLInputElement>) {
-    /* upload image to IPFS */
-    console.log('e.target.files: ', e.target.files);
-    if (e.target.files) {
       try {
-        const file = e.target.files[0];
-        const added = await client.add(file, {
-          progress: (prog) => console.log(`received: ${prog}`),
-        });
-        const url = `${infuraSubdomainGateway}/ipfs/${added.path}`;
-        setValue('imageFile', url, { shouldValidate: true });
-        console.log('url: ', url);
+        setLoading(true);
+        const cid = await pinFileToIPFS(data);
+        // const url = await uploadToIPFS();
+        const { price } = getValues();
+        const transferPrice = ethers.utils.parseUnits(`${price}`, 'ether');
+        let listingPrice = await contract.getListingPrice();
+        const transaction = await contract.createToken(cid, transferPrice, { value: listingPrice });
+        await transaction.wait();
       } catch (error) {
-        console.log('Error uploading file: ', error);
+        console.log(error);
+      } finally {
+        setLoading(false);
+        router.push('/explore')
       }
     }
-  }
+  };
+  const pinFileToIPFS = async (data: FormDataType) => {
+    const formData = new FormData();
+    formData.append('file', data.imageFile[0]);
+    const metadata = JSON.stringify({
+      name: data.name,
+      keyvalues: {
+        description: data.description,
+        price: data.price,
+      },
+    });
+    formData.append('pinataMetadata', metadata);
+    const options = JSON.stringify({
+      cidVersion: 0,
+    });
+    formData.append('pinataOptions', options);
+    try {
+      const res = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+        headers: {
+          'Content-Type': `multipart/form-data;`,
+        },
+      });
+      return res.data.IpfsHash;
+      return `https://gateway.pinata.cloud/ipfs/${res.data.IpfsHash}`;
+    } catch (error) {
+      console.log(error);
+    }
+  };
   return (
     <div
-      className="container min-h-screen flex justify-center items-center min-w-ful"
+      className="container min-h-screen flex justify-center items-center min-w-full"
       style={{ paddingTop: 66 }}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
@@ -179,11 +160,7 @@ export default function Mint() {
             className={`file-input input-bordered w-full max-w-xs ${
               errors.imageFile && 'input-error'
             }`}
-            // {...register('imageFile', { required: true })}
-            onChange={(e) => {
-              onFileChange(e);
-              // onChange(e);
-            }}
+            {...register('imageFile', { required: true })}
           />
           <label className="label">
             <span className="label-text-alt"></span>
@@ -195,7 +172,9 @@ export default function Mint() {
           </label>
         </div>
 
-        <input type="submit" className={`btn ${loading && 'loading'}`} />
+        <button type="submit" className={`btn ${loading && 'loading'}`}>
+          Create NFT
+        </button>
       </form>
     </div>
   );

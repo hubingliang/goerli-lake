@@ -4,18 +4,18 @@ import { useWeb3Modal } from '@web3modal/react';
 import { useSigner, useAccount, useEnsName } from 'wagmi';
 import { disconnect } from '@wagmi/core';
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export const User = () => {
-  const { isOpen, open, close } = useWeb3Modal();
-  const { data: signer, isError, isLoading } = useSigner();
+  const { open } = useWeb3Modal();
   const { address, isConnected } = useAccount();
-  console.log('address: ', address);
-  const { data: ensName } = useEnsName({ address });
-  console.log('ensName: ', ensName);
-  const { data } = useEnsAvatar({
-    address: address,
-  });
-  console.log('data: ', data);
+  const [initialRenderComplete, setInitialRenderComplete] = useState(false);
+  useEffect(() => {
+    setInitialRenderComplete(true);
+  }, []);
+  if (!initialRenderComplete) {
+    return null;
+  }
   if (isConnected) {
     return (
       <div className="dropdown dropdown-end">
@@ -34,11 +34,11 @@ export const User = () => {
               <span className="badge">New</span>
             </Link>
           </li>
-          <li>
+          {/* <li>
             <Link href="/" className="justify-between">
               Settings
             </Link>
-          </li>
+          </li> */}
           <li>
             <a onClick={disconnect}>Logout</a>
           </li>
@@ -50,7 +50,6 @@ export const User = () => {
       <button
         className="btn btn-sm"
         onClick={() => {
-          console.log('Logout');
           open();
         }}
       >

@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { Inter } from '@next/font/google';
 import styles from './page.module.css';
 
-const inter = Inter({ subsets: ['latin'] });
+// const inter = Inter({ subsets: ['latin'] });
 
 export default function Home() {
   return (
@@ -14,13 +14,13 @@ export default function Home() {
             <p className="py-6">
               Provident cupiditate voluptatem et in. Quaerat fugiat ut assumenda excepturi
               exercitationem quasi. In deleniti eaque aut repudiandae et a id nisi.
-              <p className="py-6">
-                You can go to{' '}
-                <a className="link" href="https://goerlifaucet.com/">
-                  goerlifaucet.com
-                </a>{' '}
-                to get free goerli ETH
-              </p>
+            </p>
+            <p className="py-6">
+              You can go to{' '}
+              <a className="link" href="https://goerlifaucet.com/">
+                goerlifaucet.com
+              </a>{' '}
+              to get free goerli ETH
             </p>
             <button className="btn btn-primary mr-4">Get Started</button>
             <a href="https://goerlifaucet.com/" target="_blank">
